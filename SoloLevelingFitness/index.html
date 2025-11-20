@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Solo Leveling Fitness System</title>
+<style>
+    body {
+        background: radial-gradient(circle at top, #0a0f1a, #000 70%);
+        color: #d6d6d6;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+
+    h1 {
+        text-align: center;
+        color: #5ab9ff;
+        text-shadow: 0 0 15px #008cff;
+        padding: 30px 0;
+        font-size: 42px;
+        letter-spacing: 3px;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: auto;
+        padding: 20px;
+    }
+
+    .card {
+        background: rgba(20, 20, 30, 0.95);
+        border: 1px solid #1f3b66;
+        padding: 25px;
+        margin: 20px 0;
+        border-radius: 12px;
+        box-shadow: 0 0 15px rgba(0, 85, 255, 0.3);
+    }
+
+    .card h2 {
+        margin-top: 0;
+        color: #79c0ff;
+        text-shadow: 0 0 10px #005eff;
+    }
+
+    input, textarea {
+        width: 100%;
+        padding: 12px;
+        background: #0f1624;
+        border: 1px solid #284b7a;
+        color: white;
+        margin: 10px 0;
+        border-radius: 8px;
+        font-size: 15px;
+    }
+
+    input:focus, textarea:focus {
+        outline: none;
+        border-color: #4fa7ff;
+        box-shadow: 0 0 10px #005eff;
+    }
+
+    button {
+        padding: 12px 22px;
+        background: linear-gradient(90deg, #007bff, #00c3ff);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: 0.3s;
+        font-size: 16px;
+        letter-spacing: 1px;
+    }
+
+    button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 15px #00c3ff;
+    }
+
+    .exercise-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    label {
+        color: #89bfff;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+
+    pre {
+        background: #0f0f16;
+        color: #98c7ff;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #284b7a;
+        box-shadow: inset 0 0 10px rgba(0, 100, 255, 0.3);
+        white-space: pre-wrap;
+        font-size: 15px;
+    }
+</style>
+</head>
+<body>
+
+<h1>SOLO LEVELING FITNESS SYSTEM</h1>
+
+<div class="container">
+
+    <!-- Registration -->
+    <div class="card">
+        <h2>🧍 Register</h2>
+        <input id="age" placeholder="Age">
+        <input id="height" placeholder="Height (cm)">
+        <input id="weight" placeholder="Weight (kg)">
+        <textarea id="goals" placeholder="Your Goals (strength, weight loss, height, endurance, aesthetics...)"></textarea>
+        <button onclick="register()">Register</button>
+        <p id="register_status"></p>
+    </div>
+
+    <!-- Max Reps Input -->
+    <div class="card">
+        <h2>💪 Enter Your Max Reps</h2>
+
+        <div class="exercise-grid">
+
+            <div>
+                <label>Push-ups</label>
+                <input id="pushups" type="number" placeholder="e.g., 20">
+            </div>
+
+            <div>
+                <label>Squats</label>
+                <input id="squats" type="number" placeholder="e.g., 30">
+            </div>
+
+            <div>
+                <label>Pull-ups</label>
+                <input id="pullups" type="number" placeholder="e.g., 5">
+            </div>
+
+            <div>
+                <label>Plank (Seconds)</label>
+                <input id="plank" type="number" placeholder="e.g., 60">
+            </div>
+
+            <div>
+                <label>Running (Minutes)</label>
+                <input id="running" type="number" placeholder="e.g., 10">
+            </div>
+
+            <div>
+                <label>Custom Exercise</label>
+                <input id="custom" placeholder="e.g., burpees:10">
+            </div>
+
+        </div>
+
+        <button onclick="saveReps()">Save Max Reps</button>
+    </div>
+
+    <!-- Generate Quest -->
+    <div class="card">
+        <h2>🎯 Generate Daily Quest</h2>
+        <button onclick="generateQuest()">Generate Quest</button>
+        <pre id="quest_output"></pre>
+    </div>
+
+</div>
+
+<script>
+let USER_ID = null;
+
+function register() {
+    fetch("http://127.0.0.1:5000/register", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            age: document.getElementById("age").value,
+            height: document.getElementById("height").value,
+            weight: document.getElementById("weight").value,
+            goals: document.getElementById("goals").value
+        })
+    }).then(r => r.json()).then(data => {
+        USER_ID = data.user_id;
+        document.getElementById("register_status").innerHTML =
+            `<span style="color:#4fa7ff;">✔ Registered! User ID: ${USER_ID}</span>`;
+    });
+}
+
+function saveReps() {
+    if (!USER_ID) return alert("Please register first!");
+
+    let reps = {
+        pushups: Number(document.getElementById("pushups").value),
+        squats: Number(document.getElementById("squats").value),
+        pullups: Number(document.getElementById("pullups").value),
+        plank_seconds: Number(document.getElementById("plank").value),
+        running_minutes: Number(document.getElementById("running").value)
+    };
+
+    let custom = document.getElementById("custom").value;
+    if (custom.includes(":")) {
+        let [name, value] = custom.split(":");
+        reps[name.trim()] = Number(value.trim());
+    }
+
+    fetch("http://127.0.0.1:5000/max_reps", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            user_id: USER_ID,
+            reps: reps
+        })
+    }).then(() => {
+        alert("Max reps saved successfully!");
+    });
+}
+
+function generateQuest() {
+    if (!USER_ID) return alert("Please register first!");
+
+    fetch("http://127.0.0.1:5000/daily_quest", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ user_id: USER_ID })
+    })
+    .then(r => r.json())
+    .then(data => {
+        document.getElementById("quest_output").textContent =
+            JSON.stringify(data.quest, null, 4);
+    });
+}
+</script>
+
+</body>
+</html>
